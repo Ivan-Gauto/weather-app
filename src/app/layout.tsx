@@ -47,3 +47,29 @@ export default function RootLayout({
     </html>
   );
 }
+
+const lat = 'YOUR_LATITUDE';
+const lon = 'YOUR_LONGITUDE';
+const API_KEY = 'YOUR_API_KEY';
+const apiUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&lang=es&appid=${API_KEY}`;
+
+// Diccionario simple para descripciones de OpenWeather
+const weatherTranslations: Record<string, string> = {
+  'clear sky': 'cielo despejado',
+  'few clouds': 'pocas nubes',
+  'scattered clouds': 'nubes dispersas',
+  'broken clouds': 'nubes rotas',
+  'shower rain': 'chubascos',
+  'rain': 'lluvia',
+  'thunderstorm': 'tormenta',
+  'snow': 'nieve',
+  'mist': 'niebla',
+  'overcast clouds': 'nublado',
+  'light rain': 'lluvia ligera',
+  'moderate rain': 'lluvia moderada',
+  // Agrega más según lo que recibas de la API
+};
+
+function traducirDescripcion(desc: string) {
+  return weatherTranslations[desc.toLowerCase()] || desc;
+}

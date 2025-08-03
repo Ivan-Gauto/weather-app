@@ -1,4 +1,3 @@
-// src/app/api/weather/route.ts
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
@@ -16,45 +15,44 @@ export async function GET(request: Request) {
   const API_KEY = process.env.OPENWEATHER_API_KEY;
   if (!API_KEY) {
     return NextResponse.json(
-      { error: "API key no configurada" },
+      { error: "API key no configurada en el servidor" },
       { status: 500 }
     );
   }
 
   try {
-    const geoUrl = `http://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${API_KEY}`;
-    const geoRes = await fetch(geoUrl);
-    const locationData = await geoRes.json();
-
-    if (!Array.isArray(locationData)) {
-      throw new Error("Datos de ubicación inválidos");
+    const apiUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`;
+    const response = await fetch(apiUrl);
+    
+    if (!response.ok) {
+      throw new Error(`Error de OpenWeather: ${response.statusText}`);
     }
 
-    const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=es&appid=${API_KEY}`;
-    const weatherRes = await fetch(weatherUrl);
-    const weatherData = await weatherRes.json();
-
-    const response = {
-      location: locationData[0]?.name || "Tu ubicación",
-      country: locationData[0]?.country,
-      weather: {
-        temp: Math.round(weatherData.main.temp),
-        feels_like: Math.round(weatherData.main.feels_like),
-        humidity: weatherData.main.humidity,
-        description: weatherData.weather[0]?.description || "",
-        icon: weatherData.weather[0]?.icon || "01d",
-        wind: weatherData.wind?.speed ? Math.round(weatherData.wind.speed * 3.6) : undefined
+    const data = await response.json();
+    
+    // Procesamos los datos para agrupar por día
+    const dailyForecast = data.list.reduce((acc: any, item: any) => {
+      const date = new Date(item.dt * 1000).toLocaleDateString('es-ES');
+      if (!acc[date]) {
+        acc[date] = {
+          date,
+          minTemp: item.main.temp_min,
+          maxTemp: item.main.temp_max,
+          weather: item.weather[0],
+          hourly: []
+        };
       }
-    };
+      acc[date].hourly.push(item);
+      return acc;
+    }, {});
 
-    return NextResponse.json(response);
-
+    return NextResponse.json({
+      current: data.list[0],
+      daily: Object.values(dailyForecast).slice(0, 7) // Próximos 7 días
+    });
   } catch (error: any) {
     return NextResponse.json(
-      { 
-        error: "Error al obtener datos climáticos",
-        details: error.message
-      },
+      { error: error.message },
       { status: 500 }
     );
   }

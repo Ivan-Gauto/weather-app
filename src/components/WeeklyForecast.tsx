@@ -1,74 +1,105 @@
-// src/components/WeeklyForecast.tsx
 'use client';
 import { useState, useEffect } from 'react';
+import { traducirDescripcion } from '../utils/weatherTranslations';
+
+interface ForecastItem {
+  dt: number;  // Timestamp único
+  main: {
+    temp_min: number;
+    temp_max: number;
+  };
+  weather: {
+    description: string;
+    icon: string;
+  }[];
+}
+
+interface DailyForecast {
+  id: string;       // Clave única basada en timestamp
+  date: string;     // Fecha formateada
+  dayName: string;  // Nombre del día
+  minTemp: number;
+  maxTemp: number;
+  icon: string;
+  description: string;
+}
 
 export default function WeeklyForecast({ coords }: { coords: { lat: number; lon: number } }) {
-  const [forecast, setForecast] = useState<any[]>([]);
+  const [forecast, setForecast] = useState<DailyForecast[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const styles = {
-    primaryText: 'text-[#0077b6]',
-    darkText: 'text-[#03045e]',
-    borderColor: 'border-[#0077b6]/30'
-  };
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchForecast = async () => {
       try {
-        const res = await fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${coords.lat}&lon=${coords.lon}&units=metric&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}`);
+        setLoading(true);
+        setError(null);
+        const res = await fetch(`/api/weather?lat=${coords.lat}&lon=${coords.lon}`);
+        if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
         const data = await res.json();
-        
-        // Procesamiento de datos para agrupar por día
-        const dailyData = data.list.reduce((acc: any, item: any) => {
-          const date = new Date(item.dt * 1000).toLocaleDateString();
-          if (!acc[date]) acc[date] = [];
-          acc[date].push(item);
-          return acc;
-        }, {});
-        
-        setForecast(Object.entries(dailyData).slice(0, 7));
-      } catch (error) {
-        console.error("Error fetching forecast:", error);
+        if (!data?.daily || !Array.isArray(data.daily)) {
+          throw new Error("Estructura de datos inválida");
+        }
+        const processedForecast: DailyForecast[] = data.daily.slice(0, 7).map((item: any, idx: number) => ({
+          id: `day-${idx}`,
+          date: item.date,
+          dayName: new Date(item.date.split('/').reverse().join('-')).toLocaleDateString('es-ES', { weekday: 'long' }),
+          minTemp: item.minTemp,
+          maxTemp: item.maxTemp,
+          icon: item.weather?.icon ?? '01d',
+          description: item.weather?.description ?? 'Despejado'
+        }));
+        setForecast(processedForecast);
+      } catch (err: any) {
+        setError(err.message || "Error al obtener el pronóstico");
+        setForecast([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchForecast();
   }, [coords]);
 
   if (loading) return (
-    <div className={`text-center ${styles.darkText}`}>
-      <div className="spinner-border spinner-border-sm" role="status">
-        <span className="visually-hidden">Cargando...</span>
-      </div>
+    <div className="d-flex justify-content-center py-4">
+      <div className="spinner-border text-info" role="status"></div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="text-center text-info py-4">
+      {error}
     </div>
   );
 
   return (
-    <div className="list-group list-group-flush">
-      {forecast.map(([date, items]: [string, any[]], index: number) => {
-        const day = new Date(date).toLocaleDateString('es-ES', { weekday: 'short' });
-        const avgTemp = Math.round(items.reduce((sum: number, item: any) => sum + item.main.temp, 0) / items.length);
-        const icon = items[0].weather[0].icon;
-        
-        return (
-          <div key={index} className={`list-group-item bg-transparent d-flex justify-content-between align-items-center py-3 ${styles.borderColor}`}>
-            <span className={`fw-medium ${styles.darkText}`}>
-              {index === 0 ? 'Hoy' : day.charAt(0).toUpperCase() + day.slice(1)}
+    <div className="d-flex flex-column gap-3">
+      {forecast.map((day) => (
+        <div
+          key={day.id}
+          className="bg-info bg-opacity-25 border border-info-subtle rounded-3 p-3 shadow-sm"
+        >
+          <div className="d-flex justify-content-between align-items-center">
+            <span className="fw-medium text-primary">
+              {day.dayName.charAt(0).toUpperCase() + day.dayName.slice(1)}
             </span>
-            <div className="d-flex align-items-center">
-              <img 
-                src={`https://openweathermap.org/img/wn/${icon}.png`} 
-                alt="Weather icon" 
-                className="me-2"
-                style={{ width: '30px', height: '30px' }}
-              />
-              <span className={`fw-bold ${styles.primaryText}`}>{Math.round(avgTemp)}°C</span>
+            <div className="d-flex align-items-center gap-2">
+              <span className="text-primary fw-bold">{Math.round(day.maxTemp)}°</span>
+              <span className="text-info">{Math.round(day.minTemp)}°</span>
             </div>
           </div>
-        );
-      })}
+          <div className="d-flex align-items-center gap-2 mt-2">
+            <img
+              src={`https://openweathermap.org/img/wn/${day.icon}.png`}
+              alt={day.description}
+              style={{ width: 40, height: 40 }}
+            />
+            <span className="text-secondary text-capitalize ms-2">
+              {traducirDescripcion(day.description)}
+            </span>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
