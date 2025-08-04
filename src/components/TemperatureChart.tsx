@@ -1,6 +1,7 @@
 // src/components/TemperatureChart.tsx
 'use client';
 import { Line } from 'react-chartjs-2';
+import zoomPlugin from 'chartjs-plugin-zoom';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -20,7 +21,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  zoomPlugin
 );
 
 interface ChartDataItem {
@@ -34,7 +36,7 @@ export default function TemperatureChart({ data }: { data: ChartDataItem[] }) {
   const styles = {
     primaryColor: '#3242d3ff',
     darkColor: '#191a4bff',
-    lightColor: 'rgba(255, 255, 255, 1)' // Añadí transparencia para mejor visualización
+    lightColor: 'rgba(255, 255, 255, 1)'
   };
 
   if (!data || data.length === 0) return (
@@ -62,42 +64,60 @@ export default function TemperatureChart({ data }: { data: ChartDataItem[] }) {
     ],
   };
 
-  // Opciones con tipado correcto para Chart.js
+  ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    zoomPlugin
+  );
+
   const options: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        position: 'top' as const,
-        labels: {
-          color: styles.lightColor,
-          font: {
-            weight: 'bold' as const, // Usamos 'as const' para el tipo literal
-            size: 12
+      zoom: {
+        pan: {
+          enabled: true,
+          mode: 'x',
+          modifierKey: 'shift'
+        },
+        zoom: {
+          wheel: {
+            enabled: true,
           },
-          padding: 20
-        }
-      },
-      tooltip: {
-        backgroundColor: styles.darkColor,
-        titleFont: {
-          weight: 'bold'
+          pinch: {
+            enabled: true
+          },
+          mode: 'x',
+          drag: {
+            enabled: true,
+            modifierKey: 'ctrl'
+          }
         }
       }
     },
     scales: {
       x: {
+        min: 0,
+        max: 23,
         grid: {
           color: styles.lightColor,
           drawTicks: false
         },
         ticks: {
           color: styles.lightColor,
+          font: {
+            weight: 'bold'
+          }
         }
       },
       y: {
-        min: 10,
-        max: 30,
+        min: 0,
+        max: 50,
         grid: {
           color: styles.lightColor,
           drawTicks: false
@@ -113,13 +133,17 @@ export default function TemperatureChart({ data }: { data: ChartDataItem[] }) {
     }
   };
 
-  return (
-    <div className="w-full" style={{ height: '300px' }}>
-      <Line
-        data={chartData}
-        options={options}
-        className="w-full h-full"
-      />
+return (
+  <div className="w-full relative" style={{ height: '300px' }}>
+    <div className="scroll-container"> {/* Cambiado el nombre de clase */}
+      <div style={{ width: `${data.length * 60}px` }}> {/* Ancho dinámico basado en datos */}
+        <Line 
+          data={chartData} 
+          options={options}
+          className="chart-canvas" /* Añadida clase */
+        />
+      </div>
     </div>
-  );
+  </div>
+);
 }
