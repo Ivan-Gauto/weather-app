@@ -11,7 +11,6 @@ export const weatherTranslations: Record<string, string> = {
   'overcast clouds': 'nublado',
   'light rain': 'lluvia ligera',
   'moderate rain': 'lluvia moderada',
-  // Agrega más según lo que recibas de la API
 };
 
 export function traducirDescripcion(desc: string) {

@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 import { Inter, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 
-// Configuración de fuentes modernas alternativas
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   weight: ['400', '500', '700'],
@@ -18,8 +17,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Nimbus | Clima Moderno',
-  description: 'Interfaz meteorológica de última generación',
+  title: 'Nimbus | Clima',
+  description: 'Interfaz meteorológica',
 };
 
 export default function RootLayout({
@@ -40,36 +39,10 @@ export default function RootLayout({
         min-h-screen
         tracking-tight
       `}>
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <main className="max-w-7xl mx-auto">
           {children}
         </main>
       </body>
     </html>
   );
-}
-
-const lat = 'YOUR_LATITUDE';
-const lon = 'YOUR_LONGITUDE';
-const API_KEY = 'YOUR_API_KEY';
-const apiUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&lang=es&appid=${API_KEY}`;
-
-// Diccionario simple para descripciones de OpenWeather
-const weatherTranslations: Record<string, string> = {
-  'clear sky': 'cielo despejado',
-  'few clouds': 'pocas nubes',
-  'scattered clouds': 'nubes dispersas',
-  'broken clouds': 'nubes rotas',
-  'shower rain': 'chubascos',
-  'rain': 'lluvia',
-  'thunderstorm': 'tormenta',
-  'snow': 'nieve',
-  'mist': 'niebla',
-  'overcast clouds': 'nublado',
-  'light rain': 'lluvia ligera',
-  'moderate rain': 'lluvia moderada',
-  // Agrega más según lo que recibas de la API
-};
-
-function traducirDescripcion(desc: string) {
-  return weatherTranslations[desc.toLowerCase()] || desc;
 }

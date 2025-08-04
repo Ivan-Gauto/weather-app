@@ -32,9 +32,9 @@ interface ChartDataItem {
 
 export default function TemperatureChart({ data }: { data: ChartDataItem[] }) {
   const styles = {
-    primaryColor: '#0077b6',
-    darkColor: '#03045e',
-    lightColor: 'rgba(202, 240, 248, 0.5)' // Añadí transparencia para mejor visualización
+    primaryColor: '#3242d3ff',
+    darkColor: '#191a4bff',
+    lightColor: 'rgba(255, 255, 255, 1)' // Añadí transparencia para mejor visualización
   };
 
   if (!data || data.length === 0) return (
@@ -50,13 +50,14 @@ export default function TemperatureChart({ data }: { data: ChartDataItem[] }) {
         label: 'Temperatura (°C)',
         data: data.map(item => Math.round(item.main.temp)),
         borderColor: styles.darkColor,
-        backgroundColor: styles.primaryColor,
         borderWidth: 2,
         tension: 0.3,
         fill: true,
         pointBackgroundColor: styles.primaryColor,
         pointBorderColor: '#fff',
-        pointHoverRadius: 5
+        pointHoverRadius: 8,
+        pointRadius: 4,
+        pointBorderWidth: 2,
       },
     ],
   };
@@ -69,7 +70,7 @@ export default function TemperatureChart({ data }: { data: ChartDataItem[] }) {
       legend: {
         position: 'top' as const,
         labels: {
-          color: styles.darkColor,
+          color: styles.lightColor,
           font: {
             weight: 'bold' as const, // Usamos 'as const' para el tipo literal
             size: 12
@@ -91,19 +92,18 @@ export default function TemperatureChart({ data }: { data: ChartDataItem[] }) {
           drawTicks: false
         },
         ticks: {
-          color: styles.darkColor,
-          font: {
-            weight: 'bold'
-          }
+          color: styles.lightColor,
         }
       },
       y: {
+        min: 10,
+        max: 30,
         grid: {
           color: styles.lightColor,
           drawTicks: false
         },
         ticks: {
-          color: styles.darkColor,
+          color: styles.lightColor,
           font: {
             weight: 'bold'
           },
@@ -115,8 +115,8 @@ export default function TemperatureChart({ data }: { data: ChartDataItem[] }) {
 
   return (
     <div className="w-full" style={{ height: '300px' }}>
-      <Line 
-        data={chartData} 
+      <Line
+        data={chartData}
         options={options}
         className="w-full h-full"
       />

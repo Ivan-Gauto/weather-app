@@ -1,90 +1,66 @@
+// src/components/WeeklyForecast.tsx
 'use client';
-import { useState, useEffect } from 'react';
 import { traducirDescripcion } from '../utils/weatherTranslations';
+import { ForecastDay } from '@/types/weatherTypes';
 
-interface ForecastItem {
-  dt: number;  // Timestamp único
-  main: {
-    temp_min: number;
-    temp_max: number;
-  };
-  weather: {
-    description: string;
-    icon: string;
-  }[];
-}
-
-interface DailyForecast {
-  id: string;       // Clave única basada en timestamp
-  date: string;     // Fecha formateada
-  dayName: string;  // Nombre del día
-  minTemp: number;
-  maxTemp: number;
-  icon: string;
-  description: string;
-}
-
-export default function WeeklyForecast({ coords }: { coords: { lat: number; lon: number } }) {
-  const [forecast, setForecast] = useState<DailyForecast[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchForecast = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await fetch(`/api/weather?lat=${coords.lat}&lon=${coords.lon}`);
-        if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
-        const data = await res.json();
-        if (!data?.daily || !Array.isArray(data.daily)) {
-          throw new Error("Estructura de datos inválida");
-        }
-        const processedForecast: DailyForecast[] = data.daily.slice(0, 7).map((item: any, idx: number) => ({
-          id: `day-${idx}`,
-          date: item.date,
-          dayName: new Date(item.date.split('/').reverse().join('-')).toLocaleDateString('es-ES', { weekday: 'long' }),
-          minTemp: item.minTemp,
-          maxTemp: item.maxTemp,
-          icon: item.weather?.icon ?? '01d',
-          description: item.weather?.description ?? 'Despejado'
-        }));
-        setForecast(processedForecast);
-      } catch (err: any) {
-        setError(err.message || "Error al obtener el pronóstico");
-        setForecast([]);
-      } finally {
-        setLoading(false);
-      }
+interface WeeklyForecastProps {
+  dailyData?: Array<{
+    dt?: number;
+    temp?: {
+      min?: number;
+      max?: number;
     };
-    fetchForecast();
-  }, [coords]);
+    weather?: Array<{
+      description?: string;
+      icon?: string;
+    }>;
+  }>;
+}
 
-  if (loading) return (
-    <div className="d-flex justify-content-center py-4">
-      <div className="spinner-border text-info" role="status"></div>
-    </div>
-  );
+export default function WeeklyForecast({ dailyData }: WeeklyForecastProps) {
+  if (!dailyData || dailyData.length === 0) {
+    return (
+      <div className="text-center text-white py-4">
+        No hay datos de pronóstico disponibles
+      </div>
+    );
+  }
 
-  if (error) return (
-    <div className="text-center text-info py-4">
-      {error}
-    </div>
-  );
+  const forecastDays: ForecastDay[] = dailyData
+    .filter(day => day && day.temp && day.weather?.[0]) // Filtramos días inválidos
+    .map((day, idx) => ({
+      id: `day-${idx}`,
+      date: day.dt ? new Date(day.dt * 1000).toLocaleDateString() : 'Fecha desconocida',
+      dayName: day.dt 
+        ? new Date(day.dt * 1000).toLocaleDateString('es-ES', { weekday: 'long' })
+        : 'Día desconocido',
+      minTemp: day.temp?.min ?? 0,
+      maxTemp: day.temp?.max ?? 0,
+      icon: day.weather?.[0]?.icon ?? '01d', // Icono por defecto
+      description: day.weather?.[0]?.description ?? 'Despejado'
+    }));
+
+  if (forecastDays.length === 0) {
+    return (
+      <div className="text-center text-white py-4">
+        No hay datos válidos de pronóstico
+      </div>
+    );
+  }
 
   return (
     <div className="d-flex flex-column gap-3">
-      {forecast.map((day) => (
+      {forecastDays.map((day) => (
         <div
           key={day.id}
-          className="bg-info bg-opacity-25 border border-info-subtle rounded-3 p-3 shadow-sm"
+          className="border border-info-subtle rounded-3 p-3 shadow-sm"
         >
           <div className="d-flex justify-content-between align-items-center">
-            <span className="fw-medium text-primary">
+            <span className="fw-medium text-white">
               {day.dayName.charAt(0).toUpperCase() + day.dayName.slice(1)}
             </span>
             <div className="d-flex align-items-center gap-2">
-              <span className="text-primary fw-bold">{Math.round(day.maxTemp)}°</span>
+              <span className="text-white fw-bold">{Math.round(day.maxTemp)}°</span>
               <span className="text-info">{Math.round(day.minTemp)}°</span>
             </div>
           </div>
@@ -94,7 +70,7 @@ export default function WeeklyForecast({ coords }: { coords: { lat: number; lon:
               alt={day.description}
               style={{ width: 40, height: 40 }}
             />
-            <span className="text-secondary text-capitalize ms-2">
+            <span className="text-white text-capitalize ms-2">
               {traducirDescripcion(day.description)}
             </span>
           </div>
