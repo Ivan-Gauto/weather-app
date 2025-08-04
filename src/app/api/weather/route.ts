@@ -39,7 +39,6 @@ export async function GET(request: Request) {
       forecastRes.json()
     ]);
 
-    // Procesamiento de datos diarios
     const dailyForecast = forecastData.list.reduce((acc: any, item: any) => {
       const date = new Date(item.dt * 1000).toLocaleDateString('es-ES');
       if (!acc[date]) {
@@ -49,14 +48,29 @@ export async function GET(request: Request) {
             min: item.main.temp_min,
             max: item.main.temp_max
           },
-          weather: item.weather[0]
+          weather: [{
+            description: item.weather[0]?.description || 'Despejado',
+            icon: item.weather[0]?.icon || '01d'
+          }]
         };
       } else {
-        if (item.main.temp_min < acc[date].temp.min) acc[date].temp.min = item.main.temp_min;
-        if (item.main.temp_max > acc[date].temp.max) acc[date].temp.max = item.main.temp_max;
+        acc[date].temp.min = Math.min(acc[date].temp.min, item.main.temp_min);
+        acc[date].temp.max = Math.max(acc[date].temp.max, item.main.temp_max);
       }
       return acc;
     }, {});
+
+    const sortedDaily = Object.values(dailyForecast)
+      .sort((a: any, b: any) => a.dt - b.dt)
+      .slice(0, 7)
+      .map((day: any) => ({
+        dt: day.dt,
+        temp: {
+          min: day.temp.min,
+          max: day.temp.max
+        },
+        weather: day.weather
+      }));
 
     return NextResponse.json({
       current: {
@@ -66,7 +80,7 @@ export async function GET(request: Request) {
           humidity: currentData.main?.humidity,
           pressure: currentData.main?.pressure
         },
-        weather: currentData.weather,
+        weather: currentData.weather || [{ description: 'Despejado', icon: '01d' }],
         wind_speed: currentData.wind?.speed,
         dt: currentData.dt
       },
@@ -76,9 +90,9 @@ export async function GET(request: Request) {
           temp: item.main.temp
         }
       })),
-      daily: Object.values(dailyForecast).slice(0, 7),
-      location: currentData.name,
-      country: currentData.sys?.country
+      daily: sortedDaily,
+      location: currentData.name || 'Ubicación desconocida',
+      country: currentData.sys?.country || ''
     });
   } catch (error: any) {
     return NextResponse.json(

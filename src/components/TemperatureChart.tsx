@@ -1,7 +1,7 @@
 // src/components/TemperatureChart.tsx
 'use client';
-import { Line } from 'react-chartjs-2';
 import zoomPlugin from 'chartjs-plugin-zoom';
+import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -11,6 +11,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  Filler,
   type ChartOptions
 } from 'chart.js';
 
@@ -21,8 +22,7 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend,
-  zoomPlugin
+  Filler
 );
 
 interface ChartDataItem {
@@ -71,7 +71,6 @@ export default function TemperatureChart({ data }: { data: ChartDataItem[] }) {
     LineElement,
     Title,
     Tooltip,
-    Legend,
     zoomPlugin
   );
 
@@ -96,7 +95,7 @@ export default function TemperatureChart({ data }: { data: ChartDataItem[] }) {
           drag: {
             enabled: true,
             modifierKey: 'ctrl'
-          }
+          },
         }
       }
     },
@@ -133,17 +132,17 @@ export default function TemperatureChart({ data }: { data: ChartDataItem[] }) {
     }
   };
 
-return (
-  <div className="w-full relative" style={{ height: '300px' }}>
-    <div className="scroll-container"> {/* Cambiado el nombre de clase */}
-      <div style={{ width: `${data.length * 60}px` }}> {/* Ancho dinámico basado en datos */}
-        <Line 
-          data={chartData} 
-          options={options}
-          className="chart-canvas" /* Añadida clase */
-        />
+  return (
+    <div className="w-full relative" style={{ height: '330px' }}>
+      <div className="scroll-container"> {/* Cambiado el nombre de clase */}
+        <div style={{ width: `${data.length * 60}px` }}> {/* Ancho dinámico basado en datos */}
+          <Line
+            data={chartData}
+            options={options}
+            className="chart-canvas" /* Añadida clase */
+          />
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
 }
